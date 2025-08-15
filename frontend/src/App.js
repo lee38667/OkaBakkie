@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import VendorDetails from './pages/VendorDetails';
 import ReservationForm from './pages/ReservationForm';
 import MyOrders from './pages/MyOrders';
+import Profile from './pages/Profile';
 import AdminPanel from './pages/AdminPanel';
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
           <Route path="/vendor/:id" element={<VendorDetails />} />
           <Route path="/reserve/:id" element={<ReservationForm />} />
           <Route path="/my-orders" element={<MyOrders />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<AdminPanel />} />
         </Routes>
       </div>

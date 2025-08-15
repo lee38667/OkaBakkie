@@ -1,18 +1,43 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Navigation = () => {
+  const location = useLocation();
+
   return (
-    <nav className="nav-bar">
-      <div className="nav-content">
-        <Link to="/" className="nav-logo">
-          Oka'bakkie
+    <nav className="bottom-nav">
+      <div className="bottom-nav-content">
+        <Link 
+          to="/" 
+          className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
+        >
+          <div className="nav-icon">🏠</div>
+          <div className="nav-label">Home</div>
         </Link>
-        <div className="nav-links">
-          <Link to="/" className="nav-link">Home</Link>
-          <Link to="/my-orders" className="nav-link">My Orders</Link>
-          <Link to="/admin" className="nav-link">Admin</Link>
-        </div>
+        
+        <Link 
+          to="/my-orders" 
+          className={`nav-item ${location.pathname === '/my-orders' ? 'active' : ''}`}
+        >
+          <div className="nav-icon">📋</div>
+          <div className="nav-label">Orders</div>
+        </Link>
+        
+        <Link 
+          to="/profile" 
+          className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}
+        >
+          <div className="nav-icon">👤</div>
+          <div className="nav-label">Profile</div>
+        </Link>
+        
+        <Link 
+          to="/admin" 
+          className={`nav-item ${location.pathname === '/admin' ? 'active' : ''}`}
+        >
+          <div className="nav-icon">⚙️</div>
+          <div className="nav-label">Admin</div>
+        </Link>
       </div>
     </nav>
   );
