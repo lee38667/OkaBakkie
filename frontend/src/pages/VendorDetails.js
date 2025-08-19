@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import Navigation from '../components/Navigation';
+import BottomNavigation from '../components/BottomNavigation';
 import { vendorService } from '../services/api';
 
 const VendorDetails = () => {
@@ -9,11 +9,7 @@ const VendorDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchVendor();
-  }, [id]);
-
-  const fetchVendor = async () => {
+  const fetchVendor = useCallback(async () => {
     try {
       setLoading(true);
       const data = await vendorService.getVendorById(id);
@@ -25,7 +21,11 @@ const VendorDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchVendor();
+  }, [fetchVendor]);
 
   const formatCurrency = (amount) => `N$${amount}`;
   const calculateSavings = () => {
@@ -35,20 +35,22 @@ const VendorDetails = () => {
 
   if (loading) {
     return (
-      <div>
-        <Navigation />
-        <div className="container">
-          <div className="loading">Loading vendor details...</div>
+      <div className="mobile-container">
+        <div className="content-wrapper">
+          <div className="loading">
+            <div className="loading-spinner"></div>
+            <p>Loading vendor details...</p>
+          </div>
         </div>
+        <BottomNavigation />
       </div>
     );
   }
 
   if (error || !vendor) {
     return (
-      <div>
-        <Navigation />
-        <div className="container">
+      <div className="mobile-container">
+        <div className="content-wrapper">
           <div className="error">
             <p>{error || 'Vendor not found'}</p>
             <Link to="/" className="btn btn-primary">
@@ -56,147 +58,280 @@ const VendorDetails = () => {
             </Link>
           </div>
         </div>
+        <BottomNavigation />
       </div>
     );
   }
 
   const isAvailable = vendor.surpriseBag.availableCount > 0;
+  const savingsPercentage = Math.round((calculateSavings() / vendor.surpriseBag.originalPrice) * 100);
 
   return (
-    <div>
-      <Navigation />
-      
-      <div className="container">
-        {/* Vendor Banner */}
-        <div className="vendor-image" style={{ height: '300px', marginBottom: '2rem' }}>
-          {vendor.name}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', alignItems: 'start' }}>
-          {/* Vendor Information */}
-          <div>
-            <h1 className="page-title">{vendor.name}</h1>
-            <span className="vendor-type">{vendor.foodType}</span>
-            
-            <div style={{ marginTop: '1.5rem', marginBottom: '2rem' }}>
-              <p style={{ fontSize: '1.1rem', lineHeight: '1.6', color: '#666' }}>
-                {vendor.description}
-              </p>
-            </div>
-
-            {/* Location & Pickup Info */}
-            <div className="vendor-details" style={{ 
-              background: '#f8f9fa', 
-              padding: '1.5rem', 
-              borderRadius: '10px',
-              marginBottom: '2rem'
-            }}>
-              <div>
-                <h3 style={{ marginBottom: '1rem', color: '#333' }}>Pickup Information</h3>
-                
-                {vendor.address && (
-                  <div style={{ marginBottom: '1rem' }}>
-                    <strong>Address:</strong>
-                    <br />
-                    {vendor.address.street}<br />
-                    {vendor.address.city}, {vendor.address.region}
-                  </div>
-                )}
-                
-                <div style={{ marginBottom: '1rem' }}>
-                  <strong>Pickup Window:</strong>
-                  <br />
-                  {vendor.pickupWindow.start} - {vendor.pickupWindow.end}
-                </div>
-                
-                <div>
-                  <strong>Instructions:</strong>
-                  <br />
-                  {vendor.pickupInstructions}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Reservation Panel */}
-          <div style={{ position: 'sticky', top: '2rem' }}>
-            <div className="form" style={{ margin: 0 }}>
-              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#FFA500', marginBottom: '0.5rem' }}>
-                  {formatCurrency(vendor.surpriseBag.price)}
-                </div>
-                <div style={{ 
-                  textDecoration: 'line-through', 
-                  color: '#999', 
-                  fontSize: '1.1rem',
-                  marginBottom: '0.5rem'
-                }}>
-                  Was {formatCurrency(vendor.surpriseBag.originalPrice)}
-                </div>
-                <div style={{ 
-                  color: '#4CAF50', 
-                  fontWeight: 'bold',
-                  fontSize: '1rem'
-                }}>
-                  You save {formatCurrency(calculateSavings())}!
-                </div>
-              </div>
-
-              <div style={{ 
-                textAlign: 'center', 
-                marginBottom: '1.5rem',
-                padding: '1rem',
-                background: isAvailable ? '#d4edda' : '#f8d7da',
-                borderRadius: '8px',
-                color: isAvailable ? '#155724' : '#721c24'
-              }}>
-                {isAvailable ? (
-                  <>
-                    <strong>{vendor.surpriseBag.availableCount} bags available</strong>
-                    <br />
-                    <small>Hurry, limited stock!</small>
-                  </>
-                ) : (
-                  <>
-                    <strong>Sold Out</strong>
-                    <br />
-                    <small>Check back tomorrow</small>
-                  </>
-                )}
-              </div>
-
-              {isAvailable ? (
-                <Link 
-                  to={`/reserve/${vendor._id}`} 
-                  className="btn btn-primary btn-full"
-                  style={{ fontSize: '1.1rem', padding: '1rem' }}
-                >
-                  Reserve Your Surprise Bag
-                </Link>
-              ) : (
-                <button 
-                  className="btn btn-secondary btn-full" 
-                  disabled
-                  style={{ fontSize: '1.1rem', padding: '1rem' }}
-                >
-                  Currently Unavailable
-                </button>
-              )}
-              
-              <div style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
-                💳 Pay cash on collection
-              </div>
-            </div>
-          </div>
-        </div>
-
+    <div className="mobile-container">
+      <div className="content-wrapper">
         {/* Back Button */}
-        <div style={{ marginTop: '3rem', textAlign: 'center' }}>
-          <Link to="/" className="btn btn-secondary">
-            ← Back to All Vendors
+        <div style={{ marginBottom: 'var(--spacing-md)' }}>
+          <Link 
+            to="/" 
+            className="btn btn-outline"
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: 'var(--spacing-sm)',
+              padding: 'var(--spacing-sm) var(--spacing-md)'
+            }}
+          >
+            ← Back
           </Link>
         </div>
+
+        {/* Vendor Hero */}
+        <div style={{
+          background: 'linear-gradient(135deg, var(--primary-color), var(--primary-dark))',
+          borderRadius: 'var(--border-radius)',
+          padding: 'var(--spacing-xl)',
+          color: 'white',
+          textAlign: 'center',
+          marginBottom: 'var(--spacing-lg)',
+          position: 'relative'
+        }}>
+          <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)' }}>
+            {vendor.foodType === 'bakery' && '🥖'}
+            {vendor.foodType === 'cafe' && '☕'}
+            {vendor.foodType === 'restaurant' && '🍽️'}
+            {vendor.foodType === 'grocery' && '🛒'}
+            {vendor.foodType === 'other' && '🍕'}
+          </div>
+          
+          <h1 style={{ 
+            fontSize: '1.5rem', 
+            fontWeight: '700', 
+            marginBottom: 'var(--spacing-sm)',
+            margin: 0
+          }}>
+            {vendor.name}
+          </h1>
+          
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: '20px',
+            padding: 'var(--spacing-xs) var(--spacing-md)',
+            display: 'inline-block',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+          }}>
+            {vendor.foodType}
+          </div>
+
+          {/* Savings Badge */}
+          {isAvailable && (
+            <div style={{
+              position: 'absolute',
+              top: 'var(--spacing-md)',
+              right: 'var(--spacing-md)',
+              background: 'var(--accent-color)',
+              color: 'white',
+              padding: 'var(--spacing-sm) var(--spacing-md)',
+              borderRadius: '20px',
+              fontSize: '0.8rem',
+              fontWeight: '700'
+            }}>
+              Save {savingsPercentage}%
+            </div>
+          )}
+        </div>
+
+        {/* Description */}
+        <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <p style={{ 
+            fontSize: '1rem', 
+            lineHeight: '1.6', 
+            color: 'var(--text-primary)',
+            margin: 0
+          }}>
+            {vendor.description}
+          </p>
+        </div>
+
+        {/* Pricing Card */}
+        <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              fontSize: '2.5rem', 
+              fontWeight: '800', 
+              color: 'var(--primary-color)',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              {formatCurrency(vendor.surpriseBag.price)}
+            </div>
+            
+            <div style={{ 
+              textDecoration: 'line-through', 
+              color: 'var(--text-secondary)', 
+              fontSize: '1.1rem',
+              marginBottom: 'var(--spacing-sm)'
+            }}>
+              was {formatCurrency(vendor.surpriseBag.originalPrice)}
+            </div>
+            
+            <div style={{ 
+              background: 'var(--accent-color)',
+              color: 'white',
+              padding: 'var(--spacing-sm) var(--spacing-md)',
+              borderRadius: '20px',
+              display: 'inline-block',
+              fontWeight: '700',
+              fontSize: '0.9rem'
+            }}>
+              You save {formatCurrency(calculateSavings())}!
+            </div>
+          </div>
+        </div>
+
+        {/* Availability Status */}
+        <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <div style={{
+            textAlign: 'center',
+            padding: 'var(--spacing-md)',
+            background: isAvailable ? '#F0F9F4' : '#FEF2F2',
+            borderRadius: 'var(--border-radius-sm)',
+            border: `2px solid ${isAvailable ? 'var(--accent-color)' : 'var(--danger-color)'}`
+          }}>
+            {isAvailable ? (
+              <>
+                <div style={{ 
+                  fontSize: '1.5rem', 
+                  marginBottom: 'var(--spacing-sm)' 
+                }}>
+                  ✅
+                </div>
+                <div style={{ 
+                  fontWeight: '700', 
+                  color: 'var(--accent-color)',
+                  marginBottom: 'var(--spacing-xs)'
+                }}>
+                  {vendor.surpriseBag.availableCount} bags available
+                </div>
+                <div style={{ 
+                  fontSize: '0.9rem', 
+                  color: 'var(--text-secondary)' 
+                }}>
+                  Hurry, limited stock!
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ 
+                  fontSize: '1.5rem', 
+                  marginBottom: 'var(--spacing-sm)' 
+                }}>
+                  ❌
+                </div>
+                <div style={{ 
+                  fontWeight: '700', 
+                  color: 'var(--danger-color)',
+                  marginBottom: 'var(--spacing-xs)'
+                }}>
+                  Sold Out
+                </div>
+                <div style={{ 
+                  fontSize: '0.9rem', 
+                  color: 'var(--text-secondary)' 
+                }}>
+                  Check back tomorrow
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Pickup Information */}
+        <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <h3 style={{ 
+            marginBottom: 'var(--spacing-md)', 
+            color: 'var(--text-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--spacing-sm)'
+          }}>
+            📍 Pickup Information
+          </h3>
+          
+          <div style={{ 
+            display: 'grid', 
+            gap: 'var(--spacing-md)' 
+          }}>
+            {vendor.address && (
+              <div>
+                <strong style={{ color: 'var(--text-primary)' }}>Address:</strong>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  {vendor.address.street}<br />
+                  {vendor.address.city}, {vendor.address.region}
+                </div>
+              </div>
+            )}
+            
+            <div>
+              <strong style={{ color: 'var(--text-primary)' }}>Pickup Window:</strong>
+              <div style={{ 
+                color: 'var(--primary-color)', 
+                fontWeight: '600',
+                fontSize: '1.1rem'
+              }}>
+                🕐 {vendor.pickupWindow.start} - {vendor.pickupWindow.end}
+              </div>
+            </div>
+            
+            <div>
+              <strong style={{ color: 'var(--text-primary)' }}>Instructions:</strong>
+              <div style={{ color: 'var(--text-secondary)' }}>
+                {vendor.pickupInstructions}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+          {isAvailable ? (
+            <Link 
+              to={`/reserve/${vendor._id}`} 
+              className="btn btn-primary btn-full btn-lg"
+              style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'var(--spacing-sm)'
+              }}
+            >
+              🎁 Reserve Your Surprise Bag
+            </Link>
+          ) : (
+            <button 
+              className="btn btn-secondary btn-full btn-lg" 
+              disabled
+            >
+              Currently Unavailable
+            </button>
+          )}
+        </div>
+
+        {/* Payment Info */}
+        <div style={{ 
+          textAlign: 'center', 
+          padding: 'var(--spacing-md)',
+          background: '#F9FAFB',
+          borderRadius: 'var(--border-radius)',
+          color: 'var(--text-secondary)',
+          fontSize: '0.9rem'
+        }}>
+          💳 Pay with cash when you collect your surprise bag
+        </div>
       </div>
+      
+      <BottomNavigation />
     </div>
   );
 };
